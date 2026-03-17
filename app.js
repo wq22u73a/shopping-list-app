@@ -6,6 +6,10 @@ const shoppingList = document.getElementById("shoppingList");
 const hidePurchasedCheckbox = document.getElementById("hidePurchased");
 const sortButton = document.getElementById("sortButton");
 
+const installArea = document.getElementById("installArea");
+const installButton = document.getElementById("installButton");
+const closeInstallButton = document.getElementById("closeInstallButton");
+
 const categoryOrder = {
   "食品": 1,
   "食品（冷凍）": 2,
@@ -39,6 +43,9 @@ const defaultTemplates = [
 
 let items = JSON.parse(localStorage.getItem("shoppingItems")) || [];
 let templates = JSON.parse(localStorage.getItem("shoppingTemplates"));
+let deferredPrompt = null;
+
+const INSTALL_DISMISSED_KEY = "installBannerDismissed";
 
 if (!templates || !Array.isArray(templates) || templates.length === 0) {
   templates = defaultTemplates;
@@ -192,7 +199,7 @@ function renderItems() {
             <span class="item-name ${item.checked ? "checked" : ""}">${item.name}</span>
           </div>
         </div>
-        <button class="delete-btn" data-index="${originalIndex}">削除</button>
+        <button class="delete-btn" data-index="${originalIndex}" type="button">削除</button>
       `;
 
       section.appendChild(div);
@@ -221,6 +228,75 @@ function attachEvents() {
       saveItems();
       renderItems();
     });
+  });
+}
+
+function isStandaloneMode() {
+  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+}
+
+function isInstallDismissed() {
+  return localStorage.getItem(INSTALL_DISMISSED_KEY) === "true";
+}
+
+function showInstallArea() {
+  if (installArea) {
+    installArea.hidden = false;
+  }
+}
+
+function hideInstallArea() {
+  if (installArea) {
+    installArea.hidden = true;
+  }
+}
+
+function setupInstallPrompt() {
+  if (isStandaloneMode()) {
+    hideInstallArea();
+    return;
+  }
+
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredPrompt = event;
+
+    if (!isInstallDismissed()) {
+      showInstallArea();
+    }
+  });
+
+  if (closeInstallButton) {
+    closeInstallButton.addEventListener("click", () => {
+      localStorage.setItem(INSTALL_DISMISSED_KEY, "true");
+      hideInstallArea();
+    });
+  }
+
+  if (installButton) {
+    installButton.addEventListener("click", async () => {
+      if (!deferredPrompt) {
+        return;
+      }
+
+      deferredPrompt.prompt();
+      const result = await deferredPrompt.userChoice;
+
+      if (result.outcome === "accepted") {
+        console.log("PWA install accepted");
+      } else {
+        console.log("PWA install dismissed");
+      }
+
+      deferredPrompt = null;
+      hideInstallArea();
+    });
+  }
+
+  window.addEventListener("appinstalled", () => {
+    console.log("PWA installed");
+    localStorage.removeItem(INSTALL_DISMISSED_KEY);
+    hideInstallArea();
   });
 }
 
@@ -255,6 +331,7 @@ sortButton.addEventListener("click", () => {
 });
 
 registerServiceWorker();
+setupInstallPrompt();
 sortItemsByCategory();
 renderTemplates();
 renderItems();

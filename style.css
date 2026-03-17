@@ -45,6 +45,67 @@ h2 {
   margin: 0 0 10px;
 }
 
+.install-area {
+  margin-bottom: 16px;
+}
+
+.install-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.install-text {
+  flex: 1;
+}
+
+.install-title {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.install-description {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.5;
+}
+
+.install-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.install-button {
+  padding: 10px 14px;
+  font-size: 14px;
+  border: none;
+  border-radius: 10px;
+  background: #333;
+  color: white;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.install-close-button {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background: white;
+  color: #666;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
 .input-area,
 .template-add {
   display: flex;
@@ -108,6 +169,7 @@ h2 {
   border-radius: 20px;
   cursor: pointer;
   font-size: 14px;
+  border: none;
 }
 
 .template-item:hover {
@@ -222,4 +284,15 @@ h2 {
   padding: 24px 12px;
   background: white;
   border-radius: 10px;
+}
+
+@media (max-width: 480px) {
+  .install-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .install-actions {
+    justify-content: flex-end;
+  }
 }
