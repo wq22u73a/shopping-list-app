@@ -1,10 +1,13 @@
 {
+  "id": "/shopping-list-app/",
   "name": "買い物リスト",
   "short_name": "買い物",
-  "start_url": "./",
+  "start_url": "/shopping-list-app/",
+  "scope": "/shopping-list-app/",
   "display": "standalone",
   "background_color": "#f3efdf",
   "theme_color": "#7b5a4f",
+  "description": "自分用の買い物リストアプリ",
   "icons": [
     {
       "src": "icons/icon-192.png",
