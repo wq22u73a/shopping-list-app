@@ -4,9 +4,15 @@ const addButton = document.getElementById("addButton");
 const hidePurchasedCheckbox = document.getElementById("hidePurchased");
 const sortButton = document.getElementById("sortButton");
 
+const shoppingInputCard = document.getElementById("shoppingInputCard");
 const shoppingList = document.getElementById("shoppingList");
 const currentTabTitle = document.getElementById("currentTabTitle");
 
+const currentTemplateSection = document.getElementById("currentTemplateSection");
+const currentTemplateTitle = document.getElementById("currentTemplateTitle");
+const currentTemplateChips = document.getElementById("currentTemplateChips");
+
+const templateTopCard = document.getElementById("templateTopCard");
 const templatePanel = document.getElementById("templatePanel");
 const shoppingPanel = document.getElementById("shoppingPanel");
 const templateList = document.getElementById("templateList");
@@ -97,7 +103,6 @@ function sortItems() {
   items.sort((a, b) => {
     const aOrder = categoryOrder[a.category] || 999;
     const bOrder = categoryOrder[b.category] || 999;
-
     if (aOrder !== bOrder) return aOrder - bOrder;
     return a.name.localeCompare(b.name, "ja");
   });
@@ -107,10 +112,16 @@ function sortTemplates() {
   templates.sort((a, b) => {
     const aOrder = categoryOrder[a.category] || 999;
     const bOrder = categoryOrder[b.category] || 999;
-
     if (aOrder !== bOrder) return aOrder - bOrder;
     return a.name.localeCompare(b.name, "ja");
   });
+}
+
+function syncSelectorsWithTab() {
+  if (activeTab !== "テンプレ") {
+    itemCategoryInput.value = activeTab;
+    templateCategoryInput.value = activeTab;
+  }
 }
 
 function setActiveTab(tabName) {
@@ -120,15 +131,20 @@ function setActiveTab(tabName) {
     button.classList.toggle("active", button.dataset.tab === tabName);
   });
 
-  if (tabName === "テンプレ") {
-    shoppingPanel.hidden = true;
-    templatePanel.hidden = false;
-  } else {
-    shoppingPanel.hidden = false;
-    templatePanel.hidden = true;
+  const isTemplateTab = tabName === "テンプレ";
+
+  shoppingInputCard.hidden = isTemplateTab;
+  shoppingPanel.hidden = isTemplateTab;
+
+  templateTopCard.hidden = !isTemplateTab;
+  templatePanel.hidden = !isTemplateTab;
+
+  if (!isTemplateTab) {
     currentTabTitle.textContent = tabName;
+    currentTemplateTitle.textContent = tabName;
   }
 
+  syncSelectorsWithTab();
   render();
 }
 
@@ -136,8 +152,42 @@ function render() {
   if (activeTab === "テンプレ") {
     renderTemplates();
   } else {
+    renderCurrentCategoryTemplates();
     renderItems();
   }
+}
+
+function renderCurrentCategoryTemplates() {
+  currentTemplateChips.innerHTML = "";
+
+  const filteredTemplates = templates.filter((template) => template.category === activeTab);
+
+  if (!filteredTemplates.length) {
+    currentTemplateChips.innerHTML = `<div class="empty-message">テンプレがありません</div>`;
+    return;
+  }
+
+  filteredTemplates.forEach((template) => {
+    const chip = document.createElement("button");
+    chip.className = "template-chip";
+    chip.type = "button";
+    chip.textContent = template.name;
+
+    chip.addEventListener("click", () => {
+      items.push({
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        name: template.name,
+        category: template.category,
+        checked: false
+      });
+
+      saveItems();
+      sortItems();
+      renderItems();
+    });
+
+    currentTemplateChips.appendChild(chip);
+  });
 }
 
 function renderItems() {
@@ -203,9 +253,13 @@ function renderTemplates() {
     const chipWrap = document.createElement("div");
     chipWrap.className = "template-chip-wrap";
 
+    const manageList = document.createElement("div");
+    manageList.className = "template-manage-list";
+
     categoryTemplates.forEach((template, indexInCategory) => {
       const sameCategoryItems = templates.filter((t) => t.category === category);
       const target = sameCategoryItems[indexInCategory];
+
       const originalIndex = templates.findIndex(
         (t, i) =>
           t.name === target.name &&
@@ -213,15 +267,16 @@ function renderTemplates() {
           templates.slice(0, i + 1).filter(
             (x) => x.name === target.name && x.category === target.category
           ).length ===
-          sameCategoryItems
-            .slice(0, indexInCategory + 1)
-            .filter((x) => x.name === target.name && x.category === target.category).length
+            sameCategoryItems
+              .slice(0, indexInCategory + 1)
+              .filter((x) => x.name === target.name && x.category === target.category).length
       );
 
       const chip = document.createElement("button");
       chip.className = "template-chip";
       chip.type = "button";
       chip.textContent = template.name;
+
       chip.addEventListener("click", () => {
         items.push({
           id: Date.now() + Math.floor(Math.random() * 1000),
@@ -231,9 +286,6 @@ function renderTemplates() {
         });
         saveItems();
         sortItems();
-        if (activeTab !== "テンプレ") {
-          renderItems();
-        }
       });
 
       const manageRow = document.createElement("div");
@@ -247,18 +299,12 @@ function renderTemplates() {
       `;
 
       chipWrap.appendChild(chip);
-      section.appendChild(heading);
-      section.appendChild(chipWrap);
-
-      if (!section.querySelector(".template-manage-list")) {
-        const list = document.createElement("div");
-        list.className = "template-manage-list";
-        section.appendChild(list);
-      }
-
-      section.querySelector(".template-manage-list").appendChild(manageRow);
+      manageList.appendChild(manageRow);
     });
 
+    section.appendChild(heading);
+    section.appendChild(chipWrap);
+    section.appendChild(manageList);
     templateList.appendChild(section);
   });
 
@@ -292,6 +338,9 @@ function attachTemplateEvents() {
       templates.splice(index, 1);
       saveTemplates();
       renderTemplates();
+      if (activeTab !== "テンプレ") {
+        renderCurrentCategoryTemplates();
+      }
     });
   });
 }
@@ -379,11 +428,10 @@ addButton.addEventListener("click", () => {
   sortItems();
 
   itemNameInput.value = "";
-  itemCategoryInput.value = category;
 
   if (activeTab !== category && activeTab !== "テンプレ") {
     setActiveTab(category);
-  } else {
+  } else if (activeTab !== "テンプレ") {
     renderItems();
   }
 });
@@ -404,9 +452,12 @@ addTemplateButton.addEventListener("click", () => {
 
   saveTemplates();
   sortTemplates();
+
   templateNameInput.value = "";
-  templateCategoryInput.value = category;
-  renderTemplates();
+
+  if (activeTab === "テンプレ") {
+    renderTemplates();
+  }
 });
 
 hidePurchasedCheckbox.addEventListener("change", () => {

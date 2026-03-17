@@ -178,6 +178,16 @@ body {
   border: 1px solid #e2dbcf;
 }
 
+.top-card-header {
+  margin-bottom: 10px;
+}
+
+.top-card-header h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
 .input-row,
 .template-add-row {
   display: flex;
@@ -224,6 +234,17 @@ body {
   font-size: 0.95rem;
 }
 
+.template-mini-section {
+  margin-top: 14px;
+}
+
+.template-mini-section h3 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  color: #5f584d;
+  font-weight: 700;
+}
+
 .section-header {
   display: flex;
   align-items: center;
@@ -261,6 +282,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin-bottom: 10px;
 }
 
 .template-chip {
@@ -271,6 +293,11 @@ body {
   padding: 10px 14px;
   font-size: 0.93rem;
   cursor: pointer;
+}
+
+.template-manage-list {
+  display: flex;
+  flex-direction: column;
 }
 
 .template-manage-item,

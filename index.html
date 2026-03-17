@@ -45,7 +45,7 @@
         </div>
       </div>
 
-      <section class="input-card">
+      <section class="input-card" id="shoppingInputCard">
         <div class="input-row">
           <input type="text" id="itemName" placeholder="商品名を入力" />
           <select id="itemCategory">
@@ -56,6 +56,7 @@
             <option value="その他">その他</option>
           </select>
         </div>
+
         <div class="input-actions">
           <button id="addButton" class="primary-button" type="button">追加</button>
           <label class="filter-label">
@@ -63,11 +64,16 @@
             未購入のみ
           </label>
         </div>
+
+        <div class="template-mini-section" id="currentTemplateSection">
+          <h3 id="currentTemplateTitle">食品</h3>
+          <div id="currentTemplateChips" class="template-chip-wrap"></div>
+        </div>
       </section>
 
-      <section class="section-card" id="templatePanel" hidden>
-        <div class="section-header">
-          <h2>よく買うもの</h2>
+      <section class="input-card template-top-card" id="templateTopCard" hidden>
+        <div class="top-card-header">
+          <h2>テンプレ追加</h2>
         </div>
 
         <div class="template-add-row">
@@ -81,7 +87,12 @@
           </select>
           <button id="addTemplateButton" class="primary-button" type="button">テンプレ追加</button>
         </div>
+      </section>
 
+      <section class="section-card" id="templatePanel" hidden>
+        <div class="section-header">
+          <h2>よく買うもの</h2>
+        </div>
         <div id="templateList"></div>
       </section>
 
