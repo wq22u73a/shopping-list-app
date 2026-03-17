@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>買い物リスト</title>
+  <meta name="theme-color" content="#333333" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <nav class="nav">
+      <a href="index.html" class="nav-link active">買い物リスト</a>
+      <a href="templates.html" class="nav-link">テンプレ管理</a>
+    </nav>
+
+    <h1>買い物リスト</h1>
+
+    <div class="input-area">
+      <input type="text" id="itemName" placeholder="商品名を入力" />
+      <select id="itemCategory">
+        <option value="食品">食品</option>
+        <option value="食品（冷凍）">食品（冷凍）</option>
+        <option value="調味料">調味料</option>
+        <option value="日用品">日用品</option>
+        <option value="化粧品">化粧品</option>
+        <option value="その他">その他</option>
+      </select>
+      <button id="addButton">追加</button>
+    </div>
+
+    <div class="template-section">
+      <h2>よく買うもの</h2>
+      <div id="templateList"></div>
+    </div>
+
+    <div class="controls">
+      <label class="filter-label">
+        <input type="checkbox" id="hidePurchased" />
+        未購入のみ表示
+      </label>
+      <button id="sortButton">カテゴリ順</button>
+    </div>
+
+    <div id="shoppingList"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
