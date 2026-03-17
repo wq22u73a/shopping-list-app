@@ -8,7 +8,6 @@ const shoppingInputCard = document.getElementById("shoppingInputCard");
 const shoppingList = document.getElementById("shoppingList");
 const currentTabTitle = document.getElementById("currentTabTitle");
 
-const currentTemplateSection = document.getElementById("currentTemplateSection");
 const currentTemplateTitle = document.getElementById("currentTemplateTitle");
 const currentTemplateChips = document.getElementById("currentTemplateChips");
 
@@ -24,6 +23,8 @@ const addTemplateButton = document.getElementById("addTemplateButton");
 const installArea = document.getElementById("installArea");
 const installButton = document.getElementById("installButton");
 const closeInstallButton = document.getElementById("closeInstallButton");
+
+const toast = document.getElementById("toast");
 
 const tabButtons = document.querySelectorAll(".tab-button");
 
@@ -44,7 +45,6 @@ const defaultTemplates = [
   { name: "レンコン（真空パック）", category: "食品" },
   { name: "お茶", category: "食品" },
   { name: "ごぼう", category: "食品" },
-
   { name: "にんにく（チューブ）", category: "調味料" },
   { name: "わさび（チューブ）", category: "調味料" },
   { name: "しょうが（チューブ）", category: "調味料" },
@@ -52,7 +52,6 @@ const defaultTemplates = [
   { name: "ソース", category: "調味料" },
   { name: "醤油", category: "調味料" },
   { name: "だしの素", category: "調味料" },
-
   { name: "綿棒", category: "日用品" }
 ];
 
@@ -70,6 +69,34 @@ if (!templates.length) {
   saveTemplates();
 }
 
+/* ======================
+   トースト通知
+====================== */
+let toastTimer = null;
+
+function showToast(message) {
+  if (!toast) return;
+
+  toast.textContent = message;
+  toast.hidden = false;
+
+  requestAnimationFrame(() => {
+    toast.classList.add("show");
+  });
+
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.classList.remove("show");
+
+    setTimeout(() => {
+      toast.hidden = true;
+    }, 200);
+  }, 1800);
+}
+
+/* ======================
+   データ整形
+====================== */
 function normalizeOldCategories() {
   items = items.map((item) => ({
     ...item,
@@ -99,6 +126,9 @@ function saveTemplates() {
   localStorage.setItem("shoppingTemplates", JSON.stringify(templates));
 }
 
+/* ======================
+   ソート
+====================== */
 function sortItems() {
   items.sort((a, b) => {
     const aOrder = categoryOrder[a.category] || 999;
@@ -117,13 +147,9 @@ function sortTemplates() {
   });
 }
 
-function syncSelectorsWithTab() {
-  if (activeTab !== "テンプレ") {
-    itemCategoryInput.value = activeTab;
-    templateCategoryInput.value = activeTab;
-  }
-}
-
+/* ======================
+   タブ制御
+====================== */
 function setActiveTab(tabName) {
   activeTab = tabName;
 
@@ -144,10 +170,12 @@ function setActiveTab(tabName) {
     currentTemplateTitle.textContent = tabName;
   }
 
-  syncSelectorsWithTab();
   render();
 }
 
+/* ======================
+   描画
+====================== */
 function render() {
   if (activeTab === "テンプレ") {
     renderTemplates();
@@ -157,10 +185,11 @@ function render() {
   }
 }
 
+/* テンプレチップ（各カテゴリ） */
 function renderCurrentCategoryTemplates() {
   currentTemplateChips.innerHTML = "";
 
-  const filteredTemplates = templates.filter((template) => template.category === activeTab);
+  const filteredTemplates = templates.filter(t => t.category === activeTab);
 
   if (!filteredTemplates.length) {
     currentTemplateChips.innerHTML = `<div class="empty-message">テンプレがありません</div>`;
@@ -170,12 +199,11 @@ function renderCurrentCategoryTemplates() {
   filteredTemplates.forEach((template) => {
     const chip = document.createElement("button");
     chip.className = "template-chip";
-    chip.type = "button";
     chip.textContent = template.name;
 
-    chip.addEventListener("click", () => {
+    chip.onclick = () => {
       items.push({
-        id: Date.now() + Math.floor(Math.random() * 1000),
+        id: Date.now(),
         name: template.name,
         category: template.category,
         checked: false
@@ -184,19 +212,22 @@ function renderCurrentCategoryTemplates() {
       saveItems();
       sortItems();
       renderItems();
-    });
+
+      showToast(`${template.name} を追加しました`);
+    };
 
     currentTemplateChips.appendChild(chip);
   });
 }
 
+/* 商品リスト */
 function renderItems() {
   shoppingList.innerHTML = "";
 
-  let displayItems = items.filter((item) => item.category === activeTab);
+  let displayItems = items.filter(i => i.category === activeTab);
 
   if (hidePurchasedCheckbox.checked) {
-    displayItems = displayItems.filter((item) => !item.checked);
+    displayItems = displayItems.filter(i => !i.checked);
   }
 
   if (!displayItems.length) {
@@ -204,284 +235,121 @@ function renderItems() {
     return;
   }
 
-  const group = document.createElement("div");
-  group.className = "item-list-group";
-
   displayItems.forEach((item) => {
-    const originalIndex = items.findIndex((originalItem) => originalItem.id === item.id);
-
     const row = document.createElement("div");
     row.className = "list-item";
 
     row.innerHTML = `
       <div class="item-left">
-        <input type="checkbox" ${item.checked ? "checked" : ""} data-index="${originalIndex}" class="check-box">
+        <input type="checkbox" ${item.checked ? "checked" : ""}>
         <span class="item-name ${item.checked ? "checked" : ""}">${item.name}</span>
       </div>
-      <button class="delete-btn" type="button" data-index="${originalIndex}" aria-label="削除">🗑</button>
+      <button class="delete-btn">🗑</button>
     `;
 
-    group.appendChild(row);
-  });
+    const checkbox = row.querySelector("input");
+    const deleteBtn = row.querySelector("button");
 
-  shoppingList.appendChild(group);
-  attachItemEvents();
+    checkbox.onchange = () => {
+      item.checked = checkbox.checked;
+      saveItems();
+      renderItems();
+    };
+
+    deleteBtn.onclick = () => {
+      items = items.filter(i => i.id !== item.id);
+      saveItems();
+      renderItems();
+    };
+
+    shoppingList.appendChild(row);
+  });
 }
 
+/* テンプレ管理 */
 function renderTemplates() {
   templateList.innerHTML = "";
 
   sortTemplates();
 
-  if (!templates.length) {
-    templateList.innerHTML = `<div class="empty-message">テンプレがありません</div>`;
-    return;
-  }
-
   categoryNames.forEach((category) => {
-    const categoryTemplates = templates.filter((template) => template.category === category);
-
-    if (!categoryTemplates.length) return;
+    const list = templates.filter(t => t.category === category);
+    if (!list.length) return;
 
     const section = document.createElement("section");
-    section.className = "template-category-group";
 
-    const heading = document.createElement("h3");
-    heading.className = "group-title";
-    heading.textContent = category;
+    section.innerHTML = `<h3>${category}</h3>`;
 
-    const chipWrap = document.createElement("div");
-    chipWrap.className = "template-chip-wrap";
+    list.forEach((template) => {
+      const row = document.createElement("div");
+      row.className = "list-item";
 
-    const manageList = document.createElement("div");
-    manageList.className = "template-manage-list";
-
-    categoryTemplates.forEach((template, indexInCategory) => {
-      const sameCategoryItems = templates.filter((t) => t.category === category);
-      const target = sameCategoryItems[indexInCategory];
-
-      const originalIndex = templates.findIndex(
-        (t, i) =>
-          t.name === target.name &&
-          t.category === target.category &&
-          templates.slice(0, i + 1).filter(
-            (x) => x.name === target.name && x.category === target.category
-          ).length ===
-            sameCategoryItems
-              .slice(0, indexInCategory + 1)
-              .filter((x) => x.name === target.name && x.category === target.category).length
-      );
-
-      const chip = document.createElement("button");
-      chip.className = "template-chip";
-      chip.type = "button";
-      chip.textContent = template.name;
-
-      chip.addEventListener("click", () => {
-        items.push({
-          id: Date.now() + Math.floor(Math.random() * 1000),
-          name: template.name,
-          category: template.category,
-          checked: false
-        });
-        saveItems();
-        sortItems();
-      });
-
-      const manageRow = document.createElement("div");
-      manageRow.className = "template-manage-item";
-      manageRow.innerHTML = `
-        <div class="template-meta">
-          <span class="template-item-name">${template.name}</span>
-          <span class="template-item-category">${template.category}</span>
-        </div>
-        <button class="template-delete-btn" type="button" data-index="${originalIndex}" aria-label="テンプレ削除">🗑</button>
+      row.innerHTML = `
+        <span>${template.name}</span>
+        <button>🗑</button>
       `;
 
-      chipWrap.appendChild(chip);
-      manageList.appendChild(manageRow);
+      row.querySelector("button").onclick = () => {
+        templates = templates.filter(t => t !== template);
+        saveTemplates();
+        renderTemplates();
+      };
+
+      section.appendChild(row);
     });
 
-    section.appendChild(heading);
-    section.appendChild(chipWrap);
-    section.appendChild(manageList);
     templateList.appendChild(section);
   });
-
-  attachTemplateEvents();
 }
 
-function attachItemEvents() {
-  document.querySelectorAll(".check-box").forEach((box) => {
-    box.addEventListener("change", (event) => {
-      const index = Number(event.target.dataset.index);
-      items[index].checked = event.target.checked;
-      saveItems();
-      renderItems();
-    });
-  });
-
-  document.querySelectorAll(".delete-btn").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      const index = Number(event.currentTarget.dataset.index);
-      items.splice(index, 1);
-      saveItems();
-      renderItems();
-    });
-  });
-}
-
-function attachTemplateEvents() {
-  document.querySelectorAll(".template-delete-btn").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      const index = Number(event.currentTarget.dataset.index);
-      templates.splice(index, 1);
-      saveTemplates();
-      renderTemplates();
-      if (activeTab !== "テンプレ") {
-        renderCurrentCategoryTemplates();
-      }
-    });
-  });
-}
-
-function registerServiceWorker() {
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", async () => {
-      try {
-        await navigator.serviceWorker.register("./service-worker.js");
-      } catch (error) {
-        console.error("Service Worker registration failed:", error);
-      }
-    });
-  }
-}
-
-function isStandaloneMode() {
-  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
-}
-
-function isInstallDismissed() {
-  return localStorage.getItem(INSTALL_DISMISSED_KEY) === "true";
-}
-
-function showInstallArea() {
-  installArea.hidden = false;
-}
-
-function hideInstallArea() {
-  installArea.hidden = true;
-}
-
-function setupInstallPrompt() {
-  if (isStandaloneMode()) {
-    hideInstallArea();
-    return;
-  }
-
-  window.addEventListener("beforeinstallprompt", (event) => {
-    event.preventDefault();
-    deferredPrompt = event;
-
-    if (!isInstallDismissed()) {
-      showInstallArea();
-    }
-  });
-
-  closeInstallButton.addEventListener("click", () => {
-    localStorage.setItem(INSTALL_DISMISSED_KEY, "true");
-    hideInstallArea();
-  });
-
-  installButton.addEventListener("click", async () => {
-    if (!deferredPrompt) return;
-
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    deferredPrompt = null;
-    hideInstallArea();
-  });
-
-  window.addEventListener("appinstalled", () => {
-    localStorage.removeItem(INSTALL_DISMISSED_KEY);
-    hideInstallArea();
-  });
-}
-
-addButton.addEventListener("click", () => {
+/* ======================
+   イベント
+====================== */
+addButton.onclick = () => {
   const name = itemNameInput.value.trim();
-  const category = normalizeCategory(itemCategoryInput.value);
+  const category = itemCategoryInput.value;
 
-  if (!name) {
-    alert("商品名を入力してください");
-    return;
-  }
+  if (!name) return;
 
   items.push({
-    id: Date.now() + Math.floor(Math.random() * 1000),
+    id: Date.now(),
     name,
     category,
     checked: false
   });
 
-  saveItems();
-  sortItems();
-
   itemNameInput.value = "";
 
-  if (activeTab !== category && activeTab !== "テンプレ") {
-    setActiveTab(category);
-  } else if (activeTab !== "テンプレ") {
-    renderItems();
-  }
-});
+  saveItems();
+  sortItems();
+  renderItems();
 
-addTemplateButton.addEventListener("click", () => {
+  showToast(`${name} を追加しました`);
+};
+
+addTemplateButton.onclick = () => {
   const name = templateNameInput.value.trim();
-  const category = normalizeCategory(templateCategoryInput.value);
+  const category = templateCategoryInput.value;
 
-  if (!name) {
-    alert("テンプレ名を入力してください");
-    return;
-  }
+  if (!name) return;
 
-  templates.push({
-    name,
-    category
-  });
-
-  saveTemplates();
-  sortTemplates();
+  templates.push({ name, category });
 
   templateNameInput.value = "";
 
-  if (activeTab === "テンプレ") {
-    renderTemplates();
-  }
+  saveTemplates();
+  renderTemplates();
+
+  showToast("テンプレ追加しました");
+};
+
+tabButtons.forEach(btn => {
+  btn.onclick = () => setActiveTab(btn.dataset.tab);
 });
 
-hidePurchasedCheckbox.addEventListener("change", () => {
-  if (activeTab !== "テンプレ") {
-    renderItems();
-  }
-});
-
-sortButton.addEventListener("click", () => {
-  sortItems();
-  saveItems();
-  if (activeTab !== "テンプレ") {
-    renderItems();
-  }
-});
-
-tabButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    setActiveTab(button.dataset.tab);
-  });
-});
-
-registerServiceWorker();
-setupInstallPrompt();
+/* ======================
+   初期化
+====================== */
 sortItems();
 sortTemplates();
 setActiveTab("食品");
